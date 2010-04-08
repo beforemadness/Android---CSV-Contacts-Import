@@ -3,12 +3,12 @@
     android:orientation="vertical"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    >
+    android:isScrollContainer="true" android:clickable="false" android:focusable="false">
     <ListView  
         android:id="@android:id/list"
         android:layout_width="fill_parent" 
         android:layout_height="wrap_content" 
-        />
+        android:addStatesFromChildren="true" android:choiceMode="multipleChoice" android:clickable="false" android:isScrollContainer="true" android:saveEnabled="true" android:smoothScrollbar="true" android:headerDividersEnabled="true"/>
     <TextView android:id="@android:id/empty"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

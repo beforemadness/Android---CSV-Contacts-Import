@@ -16,9 +16,9 @@ public final class R {
         public static final int icon=0x7f020002;
     }
     public static final class id {
-        public static final int bcheck=0x7f060000;
         public static final int menu_import=0x7f060001;
         public static final int menu_select=0x7f060002;
+        public static final int text1=0x7f060000;
     }
     public static final class layout {
         public static final int check_box_list=0x7f030000;

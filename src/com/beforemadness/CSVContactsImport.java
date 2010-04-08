@@ -16,6 +16,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Contacts.People;
+import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -24,6 +25,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 
 public class CSVContactsImport extends ListActivity {
@@ -41,15 +43,10 @@ public class CSVContactsImport extends ListActivity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
 		showDialog(DIALOG_FILE_SELECT);
+		getListView().setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+		
 	}
 
-	// Overriding Methods
-	public void onCreate1(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		setContentView(R.layout.main);
-		mFileHelper = new FileHelper();
-		showDialog(DIALOG_FILE_SELECT);
-	}
 
 	public boolean onCreateOptionsMenu(Menu menu) {
 		MenuInflater inflater = getMenuInflater();
@@ -131,11 +128,14 @@ public class CSVContactsImport extends ListActivity {
 			mChecked = false;
 		}
     	ListView lst = getListView();
-  
-    	for (int i = 0; i < lst.getChildCount(); i++) {
-			CheckBox cbox = (CheckBox) ((View)lst.getChildAt(i)).findViewById(R.id.bcheck);
-			cbox.setChecked(mChecked);
+    	ListAdapter k = getListAdapter();
+    	SparseBooleanArray a = lst.getCheckedItemPositions();
+    	
+    	for (int i = 0; i < lst.getCount(); i++) {
+    		lst.setItemChecked(i, mChecked);
 		}
+    	
+    	//setContentView(lst);
 		
 	}
 
@@ -159,21 +159,16 @@ public class CSVContactsImport extends ListActivity {
 		}
 
 		private void updateSuccess() {
-			// TODO Auto-generated method stub
+			dismissDialog(DIALOG_PLEASE_WAIT);
 			showDialog(DIALOG_OK);
 		}
 	};	
 	
 	private void importContacts() {
-		// TODO Auto-generated method stub
-    	ListView lst = getListView();
-    	
-    	for (int i = 0; i < lst.getChildCount(); i++) {
-			CheckBox cbox = (CheckBox) ((View)lst.getChildAt(i)).findViewById(R.id.bcheck);
-			if (cbox.isChecked()) {
-				//Add record to the Contacts DB
+    	SparseBooleanArray list = getListView().getCheckedItemPositions();
+    	for (int i = 0; i < list.size(); i++) {
 				ContentValues values = new ContentValues(); 
-				Hashtable<String, String> contacts = mContactsList.get(i);
+				Hashtable<String, String> contacts = mContactsList.get(list.keyAt(i));
 				String firstname = contacts.remove("firstname").trim();
 				String lastname = "";
 				String email = "";
@@ -197,24 +192,19 @@ public class CSVContactsImport extends ListActivity {
 					values.put(People.Phones.NUMBER, val);
 				}
 				getContentResolver().insert(phoneUri, values);
-				
-			}
 		}		
 	}
 	
 
 	final Runnable mUpdateResults = new Runnable() {
-
 		@Override
 		public void run() {
-			// TODO Auto-generated method stub
 			updateUI();
 		}
 
 	};
 
 	private void getFromCSVThread() {
-		// TODO Auto-generated method stub
 		showDialog(DIALOG_PLEASE_WAIT);
 		Thread t = new Thread() {
 			public void run() {
@@ -228,9 +218,9 @@ public class CSVContactsImport extends ListActivity {
 	}
 
 	private void updateUI() {
-		setListAdapter(new CheckedList(this, mContactsList,	R.layout.check_box_list));
-
-		
+		CheckedList adapter = new CheckedList(this, mContactsList,	android.R.layout.simple_list_item_multiple_choice);
+		setListAdapter(adapter);
+		adapter.notifyDataSetChanged();
 		dismissDialog(DIALOG_PLEASE_WAIT);
 	}
 
