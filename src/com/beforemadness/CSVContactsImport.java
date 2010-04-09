@@ -2,42 +2,35 @@ package com.beforemadness;
 
 import java.util.ArrayList;
 import java.util.Hashtable;
-
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.app.AlertDialog.Builder;
 import android.content.ContentValues;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Contacts.People;
 import android.util.SparseBooleanArray;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
-import android.widget.CheckBox;
-import android.widget.ListAdapter;
 import android.widget.ListView;
 
 public class CSVContactsImport extends ListActivity {
+	
 	/** Called when the activity is first created. */
 	private final int DIALOG_FILE_SELECT = 1;
 	private final int DIALOG_PLEASE_WAIT = 2;
 	private final int DIALOG_OK = 3;
-	private ArrayList<Hashtable<String, String>> mContactsList = new ArrayList<Hashtable<String, String>>();
+	private final int DIALOG_RESULT = 4;
 	final Handler mHandler = new Handler();
 	private FileHelper mFileHelper = new FileHelper();
 	private boolean mChecked = false;
-
+	private int mImported = 0;
+	private int mError = 0;
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -47,7 +40,7 @@ public class CSVContactsImport extends ListActivity {
 		
 	}
 
-
+	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		MenuInflater inflater = getMenuInflater();
 		inflater.inflate(R.menu.menu, menu);
@@ -93,7 +86,18 @@ public class CSVContactsImport extends ListActivity {
 						}
 					});
 			return builder1.create();
-
+		
+		case DIALOG_RESULT:
+			CharSequence k = mImported+" Contacts Imported."+mError+" Errors";
+			Builder builder11 = new AlertDialog.Builder(this);
+			builder11.setMessage(k).setCancelable(
+					false).setPositiveButton("Ok",
+					new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int id) {
+							CSVContactsImport.this.finish();
+						}
+					});
+			return builder11.create();			
 		default:
 			break;
 		}
@@ -112,14 +116,20 @@ public class CSVContactsImport extends ListActivity {
 		case R.id.menu_select:
 			selectAll();
 			break;
-
+		
+		case R.id.menu_files:
+			showDialog(DIALOG_FILE_SELECT);
+			break;
 		default:
 			break;
 		}
 		return false;
 
 	}
-
+	
+	/**
+	 * Check/Uncheck All the contacts.
+	 */
 	private void selectAll() {
 		// TODO Auto-generated method stub
 		if(!mChecked) {
@@ -128,14 +138,10 @@ public class CSVContactsImport extends ListActivity {
 			mChecked = false;
 		}
     	ListView lst = getListView();
-    	ListAdapter k = getListAdapter();
-    	SparseBooleanArray a = lst.getCheckedItemPositions();
     	
     	for (int i = 0; i < lst.getCount(); i++) {
     		lst.setItemChecked(i, mChecked);
 		}
-    	
-    	//setContentView(lst);
 		
 	}
 
@@ -160,38 +166,57 @@ public class CSVContactsImport extends ListActivity {
 
 		private void updateSuccess() {
 			dismissDialog(DIALOG_PLEASE_WAIT);
-			showDialog(DIALOG_OK);
+			showDialog(DIALOG_RESULT);
 		}
-	};	
+	};
+	
+	/**
+	 * Update the UI with the currentlist of contacts
+	 */
+	private void updateUI() {
+		CheckedList adapter = new CheckedList(this, mFileHelper.getContactsList(),	android.R.layout.simple_list_item_multiple_choice);
+		setListAdapter(adapter);
+		adapter.notifyDataSetChanged();
+		dismissDialog(DIALOG_PLEASE_WAIT);
+	}	
 	
 	private void importContacts() {
+		ArrayList<Hashtable<String, String>> contactList = mFileHelper.getContactsList();
     	SparseBooleanArray list = getListView().getCheckedItemPositions();
     	for (int i = 0; i < list.size(); i++) {
-				ContentValues values = new ContentValues(); 
-				Hashtable<String, String> contacts = mContactsList.get(list.keyAt(i));
-				String firstname = contacts.remove("firstname").trim();
-				String lastname = "";
-				String email = "";
-				String address = "";
-				if (contacts.containsKey("lastname"))
-					lastname = contacts.remove("lastname").trim();
-				if (contacts.containsKey("email"))
-					email = contacts.remove("email");
-				String other = contacts.remove("unknown");
-				if (contacts.containsKey("address"))
-					address = contacts.remove("address");
-				values.put(People.NAME, firstname+" "+lastname);
-				values.put(People.PRIMARY_EMAIL_ID, email);
-				Uri uri = getContentResolver().insert(People.CONTENT_URI, values);
-				
-				Uri phoneUri = Uri.withAppendedPath(uri, People.Phones.CONTENT_DIRECTORY);
-				values.clear();
-				
-				for(String val: contacts.values()) {
-					values.put(People.Phones.TYPE, People.Phones.TYPE_MOBILE);
-					values.put(People.Phones.NUMBER, val);
+				try {
+					ContentValues values = new ContentValues(); 
+					Hashtable<String, String> contacts = contactList.get(list.keyAt(i));
+					String firstname = contacts.remove("firstname").trim();
+					String lastname = "";
+					String email = "";
+					String address = "";
+					if (contacts.containsKey("lastname"))
+						lastname = contacts.remove("lastname").trim();
+					if (contacts.containsKey("email"))
+						email = contacts.remove("email");
+					String other = contacts.remove("unknown");
+					if (contacts.containsKey("address"))
+						address = contacts.remove("address");
+					values.put(People.NAME, firstname+" "+lastname);
+					values.put(People.PRIMARY_EMAIL_ID, email);
+					Uri uri = getContentResolver().insert(People.CONTENT_URI, values);
+					
+					Uri phoneUri = Uri.withAppendedPath(uri, People.Phones.CONTENT_DIRECTORY);
+					values.clear();
+					
+					for(String val: contacts.values()) {
+						values.put(People.Phones.TYPE, People.Phones.TYPE_MOBILE);
+						values.put(People.Phones.NUMBER, val);
+					}
+					getContentResolver().insert(phoneUri, values);
+					mImported++;
+				} catch (Exception e) {
+					//Toast toast = Toast.makeText(getApplicationContext(), "Encountered a bad record ... ", Toast.LENGTH_LONG);
+					//toast.show();
+					mError++;
+					  
 				}
-				getContentResolver().insert(phoneUri, values);
 		}		
 	}
 	
@@ -209,19 +234,14 @@ public class CSVContactsImport extends ListActivity {
 		Thread t = new Thread() {
 			public void run() {
 
-				mContactsList = mFileHelper.processCsvFile();
+				mFileHelper.processCsvFile();
 				mHandler.post(mUpdateResults);
 
 			}
 		};
 		t.start();
 	}
+	
 
-	private void updateUI() {
-		CheckedList adapter = new CheckedList(this, mContactsList,	android.R.layout.simple_list_item_multiple_choice);
-		setListAdapter(adapter);
-		adapter.notifyDataSetChanged();
-		dismissDialog(DIALOG_PLEASE_WAIT);
-	}
 
 }

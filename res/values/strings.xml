@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="developer">Shyam</string>
     <string name="hello">Hello World, CSVContactsImport!</string>
-    <string name="app_name">CSV Contacts Import</string>
+    <string name="app_name">Offline Contacts Sync</string>
 </resources>

@@ -10,14 +10,23 @@ import java.util.Hashtable;
 
 import android.os.Environment;
 import android.os.Handler;
-import android.widget.Toast;
 
 public class FileHelper {
 
 	private File mFiles[];
 	private int mSelectedFile;
+	private ArrayList<Hashtable<String, String>> mContactsList = null;
+	private int mReadErrors = 0;
 
-	private ArrayList<Hashtable<String, String>> mContactsList = new ArrayList<Hashtable<String, String>>();
+
+	public int getReadErrors() {
+		return mReadErrors;
+	}
+	
+	public int addError() {
+		return mReadErrors++;
+	}
+
 	final Handler mHandler = new Handler();
 
 	/**
@@ -50,7 +59,8 @@ public class FileHelper {
 	 * @param fileIndex
 	 * @return ArrayList of Contacts.
 	 */
-	protected ArrayList<Hashtable<String, String>> processCsvFile() {
+	protected void processCsvFile() {
+		mContactsList = new ArrayList<Hashtable<String, String>>();
 		try {
 			FileInputStream stream = new FileInputStream(
 					mFiles[getSelectedFileIndex()]);
@@ -58,15 +68,20 @@ public class FileHelper {
 					stream));
 			String record;
 			while ((record = dis.readLine()) != null) {
-				mContactsList.add(tokenize(record));
+				Hashtable<String, String> token = tokenize(record);
+				if (token.containsKey("firstname")) {
+					mContactsList.add(token);
+				} else {
+					mReadErrors++;
+				}
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			// Toast.makeText(CSVContactsImport.getApplicationContext(),
 			// "exception on:" + e.toString(), Toast.LENGTH_LONG).show();
+			mReadErrors++;
 		}
 
-		return mContactsList;
 	}
 
 	/**
@@ -82,7 +97,6 @@ public class FileHelper {
 		String[] token = csvLine.split(",");
 		Hashtable<String, String> contact = new Hashtable<String, String>();
 		int numberCount = 0;
-		int nameCount = 0;
 		if (token.length > 0) {
 			for (int i = 0; i < token.length; i++) {
 				// Check if the first record is all alphabet then assume its a
@@ -119,8 +133,7 @@ public class FileHelper {
 							contact.put("unknown", item);
 						}
 					}
-				}
-
+				} 
 			}
 
 		}
@@ -135,6 +148,10 @@ public class FileHelper {
 	public int getSelectedFileIndex() {
 		return mSelectedFile;
 	}
+	
+	public ArrayList<Hashtable<String, String>> getContactsList() {
+		return mContactsList;
+	}	
 
 }
 
