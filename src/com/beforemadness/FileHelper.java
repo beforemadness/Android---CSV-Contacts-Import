@@ -1,13 +1,21 @@
 package com.beforemadness;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
+import android.content.Context;
 import android.os.Environment;
 import android.os.Handler;
 
@@ -17,7 +25,9 @@ public class FileHelper {
 	private int mSelectedFile;
 	private ArrayList<Hashtable<String, String>> mContactsList = null;
 	private int mReadErrors = 0;
-
+	private String mOutFile = "android_contacts_export.csv";
+	private PrintWriter mOutFileHandle = null;
+	private Context	mContext;
 
 	public int getReadErrors() {
 		return mReadErrors;
@@ -32,9 +42,12 @@ public class FileHelper {
 	/**
 	 * Class to work with the file system and tokenize the file.
 	 */
-	public FileHelper() {
+	public FileHelper(Context context) {
 		mFiles = Environment.getExternalStorageDirectory().listFiles(
 				new Filter());
+		
+		this.mContext = context;
+		
 	}
 
 	/**
@@ -51,6 +64,36 @@ public class FileHelper {
 
 		return filesString;
 	}
+	
+	public void writeToFile(String line) {
+
+		if (mOutFileHandle == null) {
+			try {
+				    File root = Environment.getExternalStorageDirectory();
+				    if (root.canWrite()){
+				        File gpxfile = new File(root, mOutFile);
+				        FileWriter gpxwriter = new FileWriter(gpxfile);
+				         mOutFileHandle = new PrintWriter(gpxwriter);
+				    }
+
+				
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+		mOutFileHandle.println(line);
+		
+		
+	}
+	
+	public void closeWrite() {
+		mOutFileHandle.flush();
+		mOutFileHandle.close();
+		mOutFileHandle = null;
+	}
+	
 
 	/**
 	 * Process a CSV file to tokenize and return an arraylist of tokeized
@@ -140,6 +183,8 @@ public class FileHelper {
 
 		return contact;
 	}
+	
+	
 
 	public void setSelectedFileIndex(int mSelectedFile) {
 		this.mSelectedFile = mSelectedFile;

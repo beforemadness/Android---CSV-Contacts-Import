@@ -3,4 +3,12 @@
     <string name="developer">Shyam</string>
     <string name="hello">Hello World, CSVContactsImport!</string>
     <string name="app_name">Offline Contacts Sync</string>
+<string name="menu_import">Show CSV Files</string>
+<string name="show_contacts">Show Contacts</string>
+<string name="add_contacts">Add To Contacts</string>
+<string name="menu_export">Show Contacts</string>
+<string name="check">Check</string>
+<string name="uncheck">Uncheck</string>
+<string name="export_out">Export to File</string>
+<string name="default_text">Please choose from the Application Meu</string>
 </resources>
