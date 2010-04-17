@@ -22,6 +22,7 @@ import android.view.MenuItem;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
+import android.provider.Contacts;
 
 public class CSVContactsImport extends ListActivity {
 	
@@ -268,16 +269,31 @@ public class CSVContactsImport extends ListActivity {
 		SparseBooleanArray list = getListView().getCheckedItemPositions();
 		ListAdapter v = getListAdapter();
 		for (int i = 0; i < list.size(); i++) {
-			CursorWrapper wrapper = (CursorWrapper) v.getItem(i);
+			CursorWrapper wrapper = (CursorWrapper) v.getItem(list.keyAt(i));
 			
-			String line = "";			
-			String name = wrapper.getString(wrapper.getColumnIndex(People.NAME)).trim();
-			String number = wrapper.getString(wrapper.getColumnIndex(People.NUMBER)).trim();
-			String email = wrapper.getString(wrapper.getColumnIndex(People.PRIMARY_EMAIL_ID)).trim();
+			String line = "";
+			String[] columns = wrapper.getColumnNames();
+			int t = wrapper.getColumnIndex(People.PRIMARY_EMAIL_ID);
+			String name = wrapper.getString(wrapper.getColumnIndex(People.DISPLAY_NAME));
+			String number = wrapper.getString(wrapper.getColumnIndex(People.NUMBER));
+			String email = wrapper.getString(wrapper.getColumnIndex(People.PRIMARY_EMAIL_ID));
 			
-			line = "\""+name+"\""+","+"\""+number+"\""+","+"\""+email+"\"";
-			if (line.endsWith(",")) {
-				line = line.substring(0, (line.length()-1));
+			if (name != null) {
+				if (number != null) {
+					number = number.trim();
+				} else {
+					number = "";
+				}
+				
+				if (email != null) {
+					email = email.trim();
+				} else {
+					email = "";
+				}
+				line = "\""+name+"\""+","+"\""+number+"\""+","+"\""+email+"\"";
+				if (line.endsWith(",")) {
+					line = line.substring(0, (line.length()-1));
+				}
 			}
 			
 			mFileHelper.writeToFile(line);
@@ -355,14 +371,14 @@ public class CSVContactsImport extends ListActivity {
 		
 		String[] projection = new String[] {
 				People._ID,
-				People.NAME,
+				People.DISPLAY_NAME,
 				People.PRIMARY_EMAIL_ID,
 				People.Phones.NUMBER
 		};
 		
 		Uri contacts = People.CONTENT_URI;
 		Cursor managedCursor = managedQuery(contacts,projection,null,null,People.NAME + " ASC");
-		 String[] displayFields = new String[] {People.NAME, People.NUMBER};
+		 String[] displayFields = new String[] {People.DISPLAY_NAME, People.NUMBER};
 		int[] displayViews = new int[] { android.R.id.text1, android.R.id.text2 };
 
 		setListAdapter(new SimpleCursorAdapter(this, android.R.layout.simple_list_item_multiple_choice, managedCursor,displayFields, displayViews));
